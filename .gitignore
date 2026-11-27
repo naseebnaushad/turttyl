@@ -1,0 +1,15 @@
+# Build output
+/build/
+/frontend/dist/
+/frontend/node_modules/
+
+# Secrets: never commit
+.env*
+!.env.example
+*.pem
+*.key
+*.pfx
+
+# OS / editor
+.DS_Store
+*.swp
