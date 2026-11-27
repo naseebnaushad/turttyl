@@ -49,6 +49,10 @@ sessions are shared by the person at the app and by AI agents connected over MCP
 - **UI development mock:** `npm --prefix frontend run dev`, then `/?mock`,
   `/?mock=omarchy` or `/?mock=omarchy-light`, runs the UI on fake sessions. It is
   loaded only in development builds and is not in the shipped bundle (checked).
+- **Open source** under the MIT licence (`LICENSE`), with `CONTRIBUTING.md` (build,
+  test, commit style and the safety rules reviews check) and `SECURITY.md` (private
+  reporting and what is in scope). The Makefile no longer needs the maintainer's
+  version tool: it falls back to the git tag, and `VERSION=` overrides it.
 - The product is named **turttyl** (Go module `github.com/naseebnaushad/turttyl`,
   settings in `~/.turttyl/`, environment variables `TURTTYL_*`).
 - Audit log of sessions, elevation, hand-offs and agent input in

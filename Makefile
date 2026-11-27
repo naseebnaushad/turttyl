@@ -1,6 +1,9 @@
 # Build and test Turttyl. Run `make help` for the list.
 BIN      := build/turttyl
-VERSION  := $(shell bash $(HOME)/claude-standards/plugin/company-standards/scripts/version.sh label 2>/dev/null || echo 0.1.0-alpha.dev)
+# Override with `make build VERSION=x.y.z`. Otherwise: the maintainer's version tool if
+# installed, else the nearest git tag, else a dev label.
+VERSION_TOOL := $(HOME)/claude-standards/plugin/company-standards/scripts/version.sh
+VERSION  ?= $(shell { [ -f "$(VERSION_TOOL)" ] && bash "$(VERSION_TOOL)" label; } 2>/dev/null || git describe --tags --dirty 2>/dev/null || echo 0.1.0-alpha.dev)
 LDFLAGS  := -s -w -X main.version=$(VERSION)
 
 ifeq ($(shell uname),Darwin)

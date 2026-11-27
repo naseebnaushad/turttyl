@@ -5,11 +5,11 @@ client) works in the same sessions you see in the app window. Agent input is typ
 **one character at a time**, so you can watch it happen, and if you start typing, the
 agent's input stops so you can take over.
 
-As an option that is **off by default**, a customer can turn on **elevated sessions**.
+As an option that is **off by default**, you can turn on **elevated sessions**.
 You unlock sudo once by typing your password in the terminal, and agents can then run
 root commands without asking for it.
 
-Status: **v0.1.0 Alpha**. macOS and Linux. Windows and a browser mode are planned (see
+Open source under the [MIT licence](LICENSE). Status: **v0.1.0 Alpha**. macOS and Linux. Windows and a browser mode are planned (see
 [the Change Request](documents/v0.1.0/alpha/v0.1.0%20-%20Change%20Request%20(Turttyl).md)).
 
 ```mermaid
@@ -205,3 +205,15 @@ socket, audit, config) ← `cmd/turttyl` (wiring). The React UI is in
 `frontend/`, and all of its calls to Go go through `frontend/src/transport.ts`.
 
 More: [documents/](documents/README.md).
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build,
+test and send a pull request. Please report security problems privately, as described
+in [SECURITY.md](SECURITY.md), not in public issues.
+
+## Licence
+
+turttyl is released under the [MIT licence](LICENSE). Its dependencies use MIT, BSD,
+ISC or Apache-2.0 licences. If you distribute a built binary, include their licence
+notices along with it.
