@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import type { OutputEvent, Transport } from "./transport";
-import { terminalTheme } from "./theme";
+import type { DesktopLook, OutputEvent, Transport } from "./transport";
+import { terminalFont, terminalTheme } from "./theme";
+import { appShortcut } from "./shortcuts";
 
 /** Routes live output to the terminal view that owns each session. */
 export type OutputRouter = Map<string, (ev: OutputEvent) => void>;
@@ -23,19 +24,17 @@ interface Props {
   attentionKey?: string;
   /** System dark appearance. */
   dark: boolean;
+  /** The Omarchy desktop look to follow, if any. */
+  look: DesktopLook | null;
 }
 
-/** App shortcuts that xterm must leave alone so they reach the window. */
-function isAppShortcut(e: KeyboardEvent): boolean {
-  return e.metaKey && !e.altKey && (e.key === "t" || /^[1-9]$/.test(e.key));
-}
 
 /**
  * One xterm.js terminal bound to a session. It stays mounted while hidden so its
  * screen state survives switching tabs. It draws the kept history first, then applies
  * live output after that offset, so nothing is shown twice or lost.
  */
-export function TerminalView({ id, active, elevated, transport, router, onError, onUserInput, onHandBack, attentionKey, dark }: Props) {
+export function TerminalView({ id, active, elevated, transport, router, onError, onUserInput, onHandBack, attentionKey, dark, look }: Props) {
   const host = useRef<HTMLDivElement>(null);
   // Latest callbacks, read from xterm handlers that are set up once.
   const cb = useRef({ onUserInput, onHandBack });
@@ -48,8 +47,7 @@ export function TerminalView({ id, active, elevated, transport, router, onError,
       // Same size the shell starts with, so history drawn before the first fit lines up.
       cols: 120,
       rows: 32,
-      fontFamily: '"SF Mono", ui-monospace, Menlo, "DejaVu Sans Mono", monospace',
-      fontSize: 12.5,
+      ...terminalFont(look),
       lineHeight: 1.18,
       cursorBlink: true,
       cursorStyle: "bar",
@@ -57,7 +55,7 @@ export function TerminalView({ id, active, elevated, transport, router, onError,
       scrollback: 10000,
       allowProposedApi: false,
       macOptionIsMeta: true,
-      theme: terminalTheme(dark, elevated),
+      theme: terminalTheme(dark, elevated, look),
     });
     const f = new FitAddon();
     t.loadAddon(f);
@@ -92,7 +90,7 @@ export function TerminalView({ id, active, elevated, transport, router, onError,
         if (e.type === "keydown") cb.current.onHandBack();
         return false;
       }
-      return !isAppShortcut(e);
+      return appShortcut(e) === null; // window shortcuts reach the window, not the shell
     });
     const input = t.onData((d) => {
       cb.current.onUserInput();
@@ -129,8 +127,16 @@ export function TerminalView({ id, active, elevated, transport, router, onError,
   }, [active, attentionKey]);
 
   useEffect(() => {
-    if (term.current) term.current.options.theme = terminalTheme(dark, elevated);
-  }, [dark, elevated]);
+    const t = term.current;
+    if (!t) return;
+    t.options.theme = terminalTheme(dark, elevated, look);
+    const font = terminalFont(look);
+    if (t.options.fontFamily !== font.fontFamily || t.options.fontSize !== font.fontSize) {
+      t.options.fontFamily = font.fontFamily;
+      t.options.fontSize = font.fontSize;
+      if (host.current?.offsetParent) fit.current?.fit();
+    }
+  }, [dark, elevated, look]);
 
   return <div className="term-host" ref={host} style={{ display: active ? "block" : "none" }} />;
 }

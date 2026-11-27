@@ -135,7 +135,7 @@ html.glass-window .window {
   align-items: center;
   gap: 10px;
   height: 52px; /* matches the unified title bar, so tabs line up with the traffic lights */
-  padding: 0 12px 0 10px;
+  padding: 0 21px 0 10px; /* right end lines up with the card's content edge */
 }
 .tabbar.inset {
   padding-left: 84px; /* room for the traffic lights */
@@ -269,6 +269,9 @@ html.glass-window .window {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  height: 16px;
+  padding-left: 10px;
+  border-left: 1px solid var(--separator);
   font-size: 11px;
   font-weight: 500;
   color: var(--red-ink);
@@ -422,13 +425,24 @@ html.glass-window .window {
 .owner {
   color: var(--label-3);
 }
+.owner::after,
 .dot-sep::before {
   content: "·";
-  margin: 0 5px;
+  margin: 0 6px;
   color: var(--label-3);
 }
 .dot-sep {
   color: var(--green);
+}
+
+/* Narrow windows: tab names matter more than the path, so the status keeps only its state. */
+@media (max-width: 980px) {
+  .status-text .path {
+    display: none;
+  }
+  .status-text .dot-sep::before {
+    content: none;
+  }
 }
 
 /* ---------- Notices ---------- */
@@ -516,7 +530,7 @@ html.glass-window .window {
   position: relative;
   flex: 1;
   min-height: 0;
-  padding: 12px 6px 6px 14px;
+  padding: 12px 6px 6px 12px; /* text lines up with the notices' left edge */
 }
 .term-host {
   width: 100%;
@@ -728,6 +742,177 @@ html.glass-window .window {
   from {
     opacity: 0;
   }
+}
+
+/* ---------- Omarchy (Linux) ----------
+   Follows Omarchy 4's look: the active theme's colours (colors.toml), square corners,
+   flat surfaces with thin borders, no blur or drop shadows (Hyprland draws the window
+   border, gaps and any transparency), and the user's terminal font and text size. */
+
+html.omarchy .window,
+html.omarchy .window.dark {
+  --font: var(--om-font, monospace);
+  --label: var(--om-fg);
+  --label-2: color-mix(in srgb, var(--om-fg) 70%, var(--om-bg));
+  --label-3: var(--om-fg-dim);
+  --separator: color-mix(in srgb, var(--om-muted) 70%, transparent);
+  --fill: color-mix(in srgb, var(--om-fg) 9%, transparent);
+  --fill-hover: color-mix(in srgb, var(--om-fg) 16%, transparent);
+  --accent: var(--om-accent);
+  --orange: var(--om-orange);
+  --orange-ink: var(--om-orange);
+  --red: var(--om-red);
+  --red-ink: var(--om-red);
+  --green: var(--om-green);
+  --window-bg: var(--om-chrome);
+  --card: var(--om-bg);
+  --card-elevated: color-mix(in srgb, var(--om-red) 6%, var(--om-bg));
+  --glass: var(--om-raised);
+  --glass-strong: var(--om-raised);
+  --glass-edge: transparent;
+  --glass-line: var(--separator);
+  --selection: var(--om-selection);
+  --shadow: none;
+  --shadow-pop: none;
+  background: var(--window-bg);
+  font-size: var(--om-size, 13px);
+}
+html.omarchy body {
+  font-family: var(--om-font, monospace);
+  font-size: var(--om-size, 13px);
+}
+
+html.omarchy .glass,
+html.omarchy .tab.selected {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Square corners everywhere, as Omarchy draws its windows. */
+html.omarchy :is(.content, .tab, .tab-close, .btn, .icon-btn, .notice, .notice-icon, .menu, .menu-item, .sheet, .toast, .pill) {
+  border-radius: 0;
+}
+
+html.omarchy .tabbar {
+  height: 38px;
+  padding: 0 12px 0 0; /* tabs start at the window edge; the right end lines up with the notices */
+  gap: 10px;
+}
+html.omarchy .tabbar.inset {
+  padding-left: 84px; /* only when run on macOS */
+}
+html.omarchy .tabs {
+  gap: 0;
+  padding: 0;
+  height: 100%;
+  align-items: stretch;
+}
+html.omarchy .tab {
+  height: auto;
+  flex-basis: 190px;
+  padding: 0 6px 0 12px;
+  --underline: transparent;
+  box-shadow: inset 0 -2px 0 var(--underline); /* drawn inside, so the label stays centred */
+  animation: none;
+}
+html.omarchy .tab.selected {
+  background: var(--card);
+  --underline: var(--accent);
+  box-shadow: inset 0 -2px 0 var(--underline);
+}
+html.omarchy .tab.elevated.selected {
+  --underline: var(--red);
+  box-shadow: inset 0 -2px 0 var(--underline);
+}
+html.omarchy .tab.asking {
+  color: var(--orange);
+  --underline: var(--orange);
+  box-shadow: inset 0 -2px 0 var(--underline);
+}
+html.omarchy .menu-anchor {
+  display: flex;
+  align-items: center;
+}
+
+html.omarchy .content,
+html.omarchy .content.elevated,
+html.omarchy .content.asking {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--separator);
+  box-shadow: none;
+}
+html.omarchy .content.asking {
+  border-top-color: var(--orange);
+}
+html.omarchy .content.elevated {
+  border-top-color: var(--red);
+}
+
+html.omarchy .notice,
+html.omarchy .toast,
+html.omarchy .menu,
+html.omarchy .sheet {
+  border: 1px solid var(--separator);
+  box-shadow: none;
+}
+html.omarchy .notice.tone-attention,
+html.omarchy .toast.tone-attention {
+  border-color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 8%, var(--card));
+}
+html.omarchy .notice.tone-danger,
+html.omarchy .toast.tone-danger {
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 7%, var(--card));
+}
+html.omarchy .notice-icon {
+  width: 26px;
+  height: 26px;
+}
+
+/* Buttons: outlined, filled only for the main action, text in the theme background. */
+html.omarchy .btn {
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--separator);
+  font-weight: 600;
+}
+html.omarchy .btn:hover {
+  background: var(--fill);
+}
+html.omarchy :is(.btn.prominent, .btn.attention, .btn.destructive) {
+  color: var(--card);
+  border-color: transparent;
+}
+html.omarchy .btn.prominent {
+  background: var(--accent);
+}
+html.omarchy .btn.attention {
+  background: var(--orange);
+}
+html.omarchy .btn.destructive {
+  background: var(--red);
+}
+html.omarchy .btn:active,
+html.omarchy .icon-btn:active {
+  transform: none;
+}
+html.omarchy .menu-item:hover,
+html.omarchy .menu-item:focus-visible {
+  color: var(--card);
+}
+html.omarchy .scrim {
+  background: color-mix(in srgb, var(--om-chrome) 55%, transparent);
+}
+html.omarchy :focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 0;
+}
+
+/* Development mock (/?mock) in a browser: stand in for the native glass backdrop. */
+html.mock.glass-window body {
+  background: linear-gradient(135deg, #2b3a55, #4a2f4f 55%, #1f3b3a);
 }
 
 /* ---------- Accessibility preferences ---------- */

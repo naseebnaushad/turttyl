@@ -20,6 +20,8 @@ const (
 	EventOutput    = "terminal:output"
 	EventSessions  = "terminal:sessions"
 	EventAttention = "terminal:attention"
+	// EventAppearance carries a new desktop look (see TerminalService.Appearance).
+	EventAppearance = "app:appearance"
 )
 
 // OutputEvent carries a batch of output. Offset is where Data starts in the session's
@@ -138,6 +140,17 @@ type AppInfo struct {
 type TerminalService struct {
 	M       *app.Manager
 	Version string
+	// Look returns the desktop look to follow (the Omarchy theme on Linux), or nil
+	// for the app's own look. Optional.
+	Look func() any
+}
+
+// Appearance returns the desktop look the window should follow, or nil.
+func (s *TerminalService) Appearance() any {
+	if s.Look == nil {
+		return nil
+	}
+	return s.Look()
 }
 
 // Info returns the app version and whether elevated sessions are allowed.

@@ -79,15 +79,35 @@ Increase Contrast.
 
 | Action | How |
 |---|---|
-| New session | **+** in the tab bar, or ⌘T |
+| New session | **+** in the tab bar, or ⌘T (Linux: Ctrl+Shift+T) |
 | New elevated session | **+** → New Elevated Session… (only when enabled in config) |
-| Switch session | Click a tab, or ⌘1 to ⌘9 |
+| Switch session | Click a tab, or ⌘1 to ⌘9 (Linux: Alt+1 to Alt+9) |
 | Close session | **×** on the tab, or middle-click the tab (asks first if it is still running) |
-| Hand back to the agent | **Hand Back** in the notice, or ⌘↵ in the terminal |
+| Hand back to the agent | **Hand Back** in the notice, or ⌘↵ in the terminal (Linux: Ctrl+Shift+↵) |
+
+On Linux the Super key belongs to the window manager, so turttyl uses the usual
+terminal shortcuts there.
 
 Tab icons: a spark for a session an agent opened, a red shield for a root session, an
 orange hand when an agent needs you. The right end of the tab bar shows the selected
 session's folder and whether a command is running.
+
+### On Omarchy
+
+On [Omarchy](https://omarchy.org) (Arch + Hyprland), turttyl follows the desktop
+instead of the macOS look:
+
+- **Theme:** colours come from the active theme
+  (`~/.local/state/omarchy/current/theme/colors.toml`), including the terminal's 16
+  colours, and light or dark mode. Switching theme (`Super + Ctrl + T`) recolours open
+  windows within about 2 seconds.
+- **Font and size:** the terminal font from `~/.config/foot/foot.ini` and the shared
+  text size from `omarchy display text size` (`[font]` in `~/.config/omarchy/shell.toml`).
+- **Shape:** square corners, flat surfaces with thin borders, and no blur or shadows.
+  Hyprland draws the window border, gaps and any transparency.
+
+The paths follow `XDG_STATE_HOME` and `XDG_CONFIG_HOME`. Without these files turttyl
+uses its own look.
 
 ## When an agent needs you
 
@@ -173,6 +193,11 @@ All of these are in `~/.turttyl/` (folder mode 0700, files 0600):
 | `make test-real` | Also run the shell tests against your own shell setup |
 | `make lint` | `go vet` (macOS and Linux), `staticcheck`, `gofmt` |
 | `make vuln` | `govulncheck` and `npm audit` |
+
+To work on the UI without the Go side, run `npm --prefix frontend run dev` and open
+`http://localhost:5173/?mock` (the macOS look), `?mock=omarchy` or
+`?mock=omarchy-light`. The page then runs on fake sessions, including one where an
+agent is waiting for you. The mock exists only in development builds.
 
 The code follows clean architecture: `internal/domain` (types and rules) ←
 `internal/app` (use cases and ports) ← `internal/adapters/*` (PTY, Wails bridge, MCP,

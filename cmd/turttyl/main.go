@@ -9,8 +9,10 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync/atomic"
 	"syscall"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -20,6 +22,7 @@ import (
 	"github.com/naseebnaushad/turttyl/internal/adapters/control"
 	"github.com/naseebnaushad/turttyl/internal/adapters/desktop"
 	"github.com/naseebnaushad/turttyl/internal/adapters/mcpserver"
+	"github.com/naseebnaushad/turttyl/internal/adapters/omarchy"
 	"github.com/naseebnaushad/turttyl/internal/adapters/ptyshell"
 	"github.com/naseebnaushad/turttyl/internal/app"
 )
@@ -109,11 +112,35 @@ func runApp(log *slog.Logger, paths config.Paths) {
 	}
 	defer ctl.Close()
 
+	// Follow the Omarchy desktop's theme, font and text size when it is installed.
+	looks := omarchy.DefaultSource()
+	look := func() any {
+		t, err := looks.Load()
+		if err != nil {
+			log.Warn("cannot read the Omarchy theme", "err", err)
+		}
+		if t == nil {
+			return nil
+		}
+		return t
+	}
+	lookCtx, stopLook := context.WithCancel(context.Background())
+	defer stopLook()
+	go looks.Watch(lookCtx, 2*time.Second, func(t *omarchy.Theme) {
+		if a := wailsApp.Load(); a != nil {
+			if t == nil {
+				a.Event.Emit(desktop.EventAppearance, nil)
+			} else {
+				a.Event.Emit(desktop.EventAppearance, t)
+			}
+		}
+	})
+
 	wails := application.New(application.Options{
 		Name:        "Turttyl",
 		Description: "A terminal that people and AI agents share",
 		Services: []application.Service{
-			application.NewService(&desktop.TerminalService{M: mgr, Version: version}),
+			application.NewService(&desktop.TerminalService{M: mgr, Version: version, Look: look}),
 		},
 		Assets: application.AssetOptions{Handler: application.BundledAssetFileServer(frontend.Dist())},
 		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
@@ -127,9 +154,10 @@ func runApp(log *slog.Logger, paths config.Paths) {
 		Height:    820,
 		MinWidth:  760,
 		MinHeight: 480,
-		// Transparent so the macOS Liquid Glass backdrop shows behind the sidebar.
-		BackgroundType:   application.BackgroundTypeTranslucent,
-		BackgroundColour: application.NewRGBA(0, 0, 0, 0),
+		// On macOS the window is transparent so the Liquid Glass backdrop shows
+		// behind the tab bar. Elsewhere it is opaque; the page paints the theme.
+		BackgroundType:   backgroundType(),
+		BackgroundColour: backgroundColour(),
 		URL:              "/",
 		Mac: application.MacWindow{
 			Backdrop: application.MacBackdropLiquidGlass,
@@ -156,4 +184,18 @@ func fail(log *slog.Logger, msg string, err error) {
 	log.Error(msg, "err", err)
 	fmt.Fprintf(os.Stderr, "turttyl: %s: %v\n", msg, err)
 	os.Exit(1)
+}
+
+func backgroundType() application.BackgroundType {
+	if runtime.GOOS == "darwin" {
+		return application.BackgroundTypeTranslucent
+	}
+	return application.BackgroundTypeSolid
+}
+
+func backgroundColour() application.RGBA {
+	if runtime.GOOS == "darwin" {
+		return application.NewRGBA(0, 0, 0, 0)
+	}
+	return application.NewRGB(0x1a, 0x1b, 0x1e) // shown only until the page paints
 }

@@ -12,6 +12,8 @@ running app over `~/.turttyl/control.sock`. See README.md for features.
   (`scripts/`). They emit OSC 133 A (prompt), C (output start) and D;code (finished).
 - `internal/adapters/{desktop,control,mcpserver,audit,config}`: the Wails bridge,
   Unix socket API, MCP tools, JSONL audit log and config.json.
+- `internal/adapters/omarchy`: reads the Omarchy theme, font and text size (Linux)
+  for the UI. Values reach CSS, so keep the strict validation.
 - `cmd/turttyl`: wiring only. `frontend/`: the UI, built to `frontend/dist`
   and embedded.
 

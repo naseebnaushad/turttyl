@@ -37,6 +37,18 @@ sessions are shared by the person at the app and by AI agents connected over MCP
   native Liquid Glass, the terminal sits on an opaque card, and notices, the new-session
   menu and the close-confirmation sheet use a glass material. Light and dark follow the
   system; Reduce Transparency, Reduce Motion and Increase Contrast are respected.
+- **Omarchy look on Linux:** `internal/adapters/omarchy` reads the active Omarchy 4
+  theme (`colors.toml`, light or dark), foot's terminal font and the shared text size,
+  and polls them every 2 seconds. The window then uses the theme's colours (the
+  terminal's 16 colours too), square corners and flat bordered surfaces. Colours and
+  font names are strictly validated because they reach CSS. Without Omarchy nothing
+  changes.
+- **Linux shortcuts:** Ctrl+Shift+T (new session), Alt+1–9 (switch) and Ctrl+Shift+↵
+  (hand back), because Hyprland owns the Super key. Menus, tooltips and buttons show
+  the right keys for each platform (`frontend/src/shortcuts.ts`).
+- **UI development mock:** `npm --prefix frontend run dev`, then `/?mock`,
+  `/?mock=omarchy` or `/?mock=omarchy-light`, runs the UI on fake sessions. It is
+  loaded only in development builds and is not in the shipped bundle (checked).
 - The product is named **turttyl** (Go module `github.com/naseebnaushad/turttyl`,
   settings in `~/.turttyl/`, environment variables `TURTTYL_*`).
 - Audit log of sessions, elevation, hand-offs and agent input in
@@ -97,6 +109,11 @@ Run on macOS (darwin/arm64), 2026-11-27.
 | TERMINAL-013 | Real sudo unlock in the app, agent runs `whoami` → `root`, close ends the root shell | ⬜ not run: needs a person to type the password |
 | TERMINAL-014 | Linux build and run | ⬜ not run |
 | TERMINAL-021 | Redesigned window (dark appearance): tabs in the title bar lined up with the traffic lights, ⌘T opens a tab, Liquid Glass backdrop, a live agent request shows the orange tab and the notice with Hand Back | ✅ manual (screenshots) |
+| TERMINAL-023 | Omarchy reader: theme, mode, `light.mode`, foot font and size, shell text size, out-of-range sizes and unsafe values rejected, change detection (synthetic files) | ✅ unit |
+| TERMINAL-024 | Omarchy look in the app with a synthetic dark theme and text size 15, then a live switch to a light theme | ✅ manual (screenshots, on macOS with XDG paths pointed at test files) |
+| TERMINAL-025 | On a real Omarchy 4 machine: theme switch, `omarchy display text size`, `omarchy font set`, Hyprland tiling | ⬜ not run: needs an Omarchy machine |
+| TERMINAL-026 | Layout measured in both looks (1280×820 and 760×480, light and dark): tab-bar items share one centre line, terminal text and notices share left and right edges, nothing overflows | ✅ manual (browser mock) |
+| TERMINAL-027 | Linux shortcuts Ctrl+Shift+T, Alt+1–9 and Ctrl+Shift+↵ on a Linux machine | ⬜ not run: needs Linux |
 | TERMINAL-022 | Light appearance, Reduce Transparency and Reduce Motion | ⬜ not run: needs the system setting changed |
 
 `go test -race ./...`, `go vet` (darwin and linux), `staticcheck`, `govulncheck` and
@@ -104,6 +121,15 @@ Run on macOS (darwin/arm64), 2026-11-27.
 
 ## Bugs fixed
 None (new product). Problems found and fixed during development:
+- The window stayed blank when Omarchy was not installed: the Go side sends an empty
+  value instead of `null`, and the UI read `colors` from it. The UI now accepts only
+  a well-formed look (`asLook` in `transport.ts`) and treats anything else as none.
+- Alignment: the terminal text was 2 px off the notices' edge, the tab bar's right end
+  lined up with nothing, the status separators had uneven spacing, and on Omarchy the
+  **+** button sat 4 px high and tab labels 1 px high. All now line up (measured in
+  the browser at 1280×820 and 760×480).
+- In narrow windows the status squeezed the tab names; below 980 px it now shows only
+  the session's state.
 - `wait_for_command` returned at once after the agent answered a prompt, because the
   old question was still the last line. Idle time now also counts from the start of
   the wait.

@@ -3,6 +3,7 @@ import type { AppInfo, SessionInfo } from "./transport";
 import { CloseIcon, HandIcon, PlusIcon, ShieldIcon, SparkIcon, TerminalIcon } from "./Icons";
 import { Menu, type MenuItem } from "./Overlays";
 import { isMac } from "./theme";
+import { keyLabel } from "./shortcuts";
 
 interface Props {
   info: AppInfo | null;
@@ -37,7 +38,7 @@ function TabIcon({ s }: { s: SessionInfo }) {
 export function TabBar({ info, sessions, activeId, onSelect, onCreate, onClose, children }: Props) {
   const [menu, setMenu] = useState(false);
   const items: MenuItem[] = [
-    { label: "New Session", icon: <TerminalIcon />, shortcut: "⌘T", onSelect: () => onCreate(false) },
+    { label: "New Session", icon: <TerminalIcon />, shortcut: keyLabel.newTab, onSelect: () => onCreate(false) },
   ];
   if (info?.elevationEnabled) {
     items.push({ label: "New Elevated Session…", icon: <ShieldIcon />, destructive: true, onSelect: () => onCreate(true) });
@@ -59,7 +60,7 @@ export function TabBar({ info, sessions, activeId, onSelect, onCreate, onClose, 
               onClick={() => onSelect(s.id)}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onSelect(s.id)}
               onAuxClick={(e) => e.button === 1 && onClose(s)}
-              title={[s.name, s.cwd, who, i < 9 ? `⌘${i + 1}` : ""].filter(Boolean).join(" — ")}
+              title={[s.name, s.cwd, who, i < 9 ? keyLabel.tab(i + 1) : ""].filter(Boolean).join(" — ")}
             >
               <TabIcon s={s} />
               <span className="tab-name">{s.name}</span>

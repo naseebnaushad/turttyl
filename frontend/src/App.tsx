@@ -4,7 +4,8 @@ import { errorText, type AppInfo, type SessionInfo, type Transport } from "./tra
 import { TabBar, TypingDots, shortPath } from "./TabBar";
 import { AlertSheet, Notice } from "./Overlays";
 import { ArrowUturnIcon, HandIcon, InfoIcon, KeyIcon, PlusIcon, ShieldIcon, TerminalIcon } from "./Icons";
-import { useDarkMode } from "./theme";
+import { useDarkMode, useDesktopLook } from "./theme";
+import { appShortcut, keyLabel } from "./shortcuts";
 
 interface Props {
   transport: Transport;
@@ -20,7 +21,9 @@ export function App({ transport }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState<SessionInfo | null>(null);
-  const dark = useDarkMode();
+  const look = useDesktopLook(transport);
+  const systemDark = useDarkMode();
+  const dark = look ? look.mode === "dark" : systemDark;
   const router = useMemo<OutputRouter>(() => new Map(), []);
   const known = useRef<Set<string>>(new Set());
   const asking = useRef<Set<string>>(new Set()); // sessions whose request we've seen
@@ -99,15 +102,15 @@ export function App({ transport }: Props) {
     [transport, showError],
   );
 
-  // Window shortcuts: ⌘T new session, ⌘1–9 switch session.
+  // Window shortcuts: new session and switch session (see shortcuts.ts per platform).
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (!e.metaKey || e.altKey || e.ctrlKey) return;
-      if (e.key === "t") {
+      const sc = appShortcut(e);
+      if (sc?.kind === "new") {
         e.preventDefault();
         create(false);
-      } else if (/^[1-9]$/.test(e.key)) {
-        const s = sessions[Number(e.key) - 1];
+      } else if (sc?.kind === "switch") {
+        const s = sessions[sc.index];
         if (s) {
           e.preventDefault();
           setActiveId(s.id);
@@ -132,8 +135,8 @@ export function App({ transport }: Props) {
           `Ended${active.exitCode !== undefined ? ` · exit ${active.exitCode}` : ""}`
         ) : (
           <>
-            {active.createdBy.kind === "agent" && <span className="owner">{active.createdBy.name} · </span>}
-            {shortPath(active.cwd)}
+            {active.createdBy.kind === "agent" && <span className="owner path">{active.createdBy.name}</span>}
+            <span className="path">{shortPath(active.cwd)}</span>
             {active.running && <span className="dot-sep">Running</span>}
           </>
         )}
@@ -168,8 +171,8 @@ export function App({ transport }: Props) {
               icon={<HandIcon size={18} />}
               title={`${active.attention.agent} needs you`}
               actions={
-                <button className="btn attention" onClick={() => handBack(active.id)} title="Hand back (⌘↵)">
-                  <ArrowUturnIcon size={13} /> Hand Back <kbd>⌘↵</kbd>
+                <button className="btn attention" onClick={() => handBack(active.id)} title={`Hand back (${keyLabel.handBack})`}>
+                  <ArrowUturnIcon size={13} /> Hand Back <kbd>{keyLabel.handBack}</kbd>
                 </button>
               }
             >
@@ -229,6 +232,7 @@ export function App({ transport }: Props) {
               onHandBack={() => s.attention && handBack(s.id)}
               attentionKey={s.attention?.since}
               dark={dark}
+              look={look}
             />
           ))}
           {sessions.length === 0 && (

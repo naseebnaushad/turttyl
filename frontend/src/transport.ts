@@ -36,6 +36,15 @@ export interface AppInfo {
   elevationEnabled: boolean;
 }
 
+/** The Omarchy desktop's look (Linux): theme colours, mode, terminal font and text size. */
+export interface DesktopLook {
+  name: string;
+  mode: "dark" | "light";
+  colors: Record<string, string>;
+  fontFamily?: string;
+  fontPx?: number;
+}
+
 export interface OutputEvent {
   id: string;
   offset: number;
@@ -59,6 +68,9 @@ export interface Transport {
   handBack(id: string): Promise<void>;
   onOutput(cb: (ev: OutputEvent) => void): () => void;
   onSessions(cb: (s: SessionInfo[]) => void): () => void;
+  /** The desktop look to follow, or null for the app's own look. */
+  appearance(): Promise<DesktopLook | null>;
+  onAppearance(cb: (look: DesktopLook | null) => void): () => void;
 }
 
 const SVC = "github.com/naseebnaushad/turttyl/internal/adapters/desktop.TerminalService.";
@@ -94,7 +106,25 @@ export const wailsTransport: Transport = {
     }),
   onSessions: (cb) =>
     Events.On("terminal:sessions", (ev: { data: unknown }) => cb((ev.data as SessionInfo[] | null) ?? [])),
+  appearance: async () => asLook(await call<unknown>("Appearance")),
+  onAppearance: (cb) => Events.On("app:appearance", (ev: { data: unknown }) => cb(asLook(ev.data))),
 };
+
+/** Accepts only a well-formed desktop look; anything else (null, {}, junk) means none. */
+export function asLook(v: unknown): DesktopLook | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Partial<DesktopLook>;
+  if (!o.colors || typeof o.colors !== "object" || Array.isArray(o.colors)) return null;
+  const colors: Record<string, string> = {};
+  for (const [k, c] of Object.entries(o.colors)) if (typeof c === "string") colors[k] = c;
+  return {
+    name: typeof o.name === "string" ? o.name : "",
+    mode: o.mode === "light" ? "light" : "dark",
+    colors,
+    fontFamily: typeof o.fontFamily === "string" ? o.fontFamily : undefined,
+    fontPx: typeof o.fontPx === "number" ? o.fontPx : undefined,
+  };
+}
 
 /** Turns an unknown error from a Go call into a short message for the person. */
 export function errorText(e: unknown): string {
